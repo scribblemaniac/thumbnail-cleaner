@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
 # Thumbnail Cleaner - GNOME application to remove all invalid thumbnails.
@@ -20,19 +20,17 @@
 
 import argparse
 from enum import Enum, auto
+from math import floor
 from pathlib import Path
 from urllib.parse import urlparse, unquote
-from math import floor
 
-from tqdm import tqdm
 from PIL import Image
+from tqdm import tqdm
 
 ###########################################################################
 # Thumbnail Scanner
 
-NAME = 'Thumbnail Cleaner'
-VERSION = '2.0'
-print(NAME, VERSION)
+__version__ = '2.0'
 
 class ThumbnailState(Enum):
     OUTDATED = auto()
@@ -107,8 +105,9 @@ class ThumbnailScanner():
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='Remove outdated thumbnails from the GNOME cache.')
+    parser = argparse.ArgumentParser(prog='Thumbnail Cleaner', description='Remove outdated thumbnails from the GNOME cache.')
     parser.add_argument('--dry-run', action='store_true', help='Print the files that would be deleted, but do not delete them.')
+    parser.add_argument('--version', action='version', version=f"%(prog)s {__version__}")
     args = parser.parse_args()
     return args
 
