@@ -20,6 +20,7 @@
 
 import argparse
 from enum import Enum, auto
+import logging
 from math import floor
 from pathlib import Path
 from urllib.parse import urlparse, unquote
@@ -60,7 +61,7 @@ class ThumbnailScanner():
     def _do_walk(self):
         self.deletable = []
 
-        for filepath in tqdm(THUMBNAIL_CACHE_DIR.rglob("*.png"), total=len(list(THUMBNAIL_CACHE_DIR.rglob("*.png")))):
+        for filepath in tqdm(THUMBNAIL_CACHE_DIR.rglob("*.png"), total=len(list(THUMBNAIL_CACHE_DIR.rglob("*.png"))), disable=self.args.quiet):
             status = self._get_status_from_thumbnail(filepath)
 
             if status in [ThumbnailState.OUTDATED, ThumbnailState.ORPHAN]:
@@ -80,14 +81,14 @@ class ThumbnailScanner():
         local_path = Path(unquote(local_path_str))
         if not local_path.exists():
             if self.args.dry_run:
-                print(f"Thumbnail for nonexistant file {local_path}")
+                logging.info(f"Thumbnail for nonexistant file {local_path}")
             return ThumbnailState.ORPHAN
 
         # Make sure source file has not been updated
         try:
             if floor(local_path.stat().st_mtime) > floor(float(metadata["Thumb::MTime"])):
                 if self.args.dry_run:
-                    print(f"Outdated thumbnail for file {local_path}")
+                    logging.info(f"Outdated thumbnail for file {local_path}")
                 return ThumbnailState.OUTDATED
         except KeyError:
             pass
@@ -107,6 +108,7 @@ class ThumbnailScanner():
 def parse_args():
     parser = argparse.ArgumentParser(prog='Thumbnail Cleaner', description='Remove outdated thumbnails from the GNOME cache.')
     parser.add_argument('--dry-run', action='store_true', help='Print the files that would be deleted, but do not delete them.')
+    parser.add_argument('--quiet', action='store_true', help='Only print warnings and errors.')
     parser.add_argument('--version', action='version', version=f"%(prog)s {__version__}")
     args = parser.parse_args()
     return args
@@ -114,6 +116,11 @@ def parse_args():
 
 def main():
     args = parse_args()
+
+    logging.basicConfig(level=logging.WARNING if args.quiet else logging.INFO, format="%(message)s")
+    if args.dry_run and args.quiet:
+        print("Warning: Dry run output will not be displayed with --quiet specified")
+
     scanner = ThumbnailScanner(args)
     scanner.scan()
 
